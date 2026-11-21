@@ -1,0 +1,43 @@
+name: GitOps Infra Apply
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Terraform Init, Fmt, Validate & Plan
+        run: |
+          terraform init -input=false
+          terraform fmt -check
+          terraform validate
+          terraform plan -input=false -out=tfplan
+
+  apply:
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Terraform Init & Apply
+        run: |
+          terraform init -input=false
+          terraform apply -auto-approve -input=false
